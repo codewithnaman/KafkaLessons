@@ -10,9 +10,9 @@ import java.util.Properties;
 public class KafkaProducerWithCallBack {
 
     public static void main(String[] args) {
-        String topicName = "demo_topic";
+        String topicName = "demo_application_topic";
         Properties properties = SimpleKafkaProducer.getKafkaProperties();
-        KafkaProducer<String, String> kafkaProducer = SimpleKafkaProducer.getKafkaProducer(properties);
+        KafkaProducer<String, String> kafkaProducer = SimpleKafkaProducer.createKafkaProducer(properties);
         for (int i = 0; i < 10; i++) {
             sendDataToKafka(kafkaProducer, "Sample Data " + i, topicName);
         }
@@ -22,7 +22,7 @@ public class KafkaProducerWithCallBack {
     private static void sendDataToKafka(KafkaProducer<String, String> kafkaProducer, String data, String topicName) {
         ProducerRecord<String, String> producerRecord = new ProducerRecord<String, String>(topicName, data);
         kafkaProducer.send(producerRecord, (recordMetadata, exception) -> {
-            if (exception != null) {
+            if (exception == null) {
                 log.info("Topic     : " + recordMetadata.topic());
                 log.info("Partition : " + recordMetadata.partition());
                 log.info("Offset    : " + recordMetadata.offset());

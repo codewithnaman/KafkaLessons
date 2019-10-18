@@ -7,13 +7,12 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.util.Properties;
 
 @Slf4j
-
 public class KafkaProducerWithKeys {
 
     public static void main(String[] args) {
-        String topicName = "demo_topic";
+        String topicName = "demo_application_topic";
         Properties properties = SimpleKafkaProducer.getKafkaProperties();
-        KafkaProducer<String, String> kafkaProducer = SimpleKafkaProducer.getKafkaProducer(properties);
+        KafkaProducer<String, String> kafkaProducer = SimpleKafkaProducer.createKafkaProducer(properties);
         for (int i = 0; i < 10; i++) {
             sendDataToKafka(kafkaProducer, i, topicName);
         }
@@ -25,7 +24,7 @@ public class KafkaProducerWithKeys {
         String data = "Sample data " + dataPart;
         ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topicName, key, data);
         kafkaProducer.send(producerRecord, (recordMetadata, exception) -> {
-            if (exception != null) {
+            if (exception == null) {
                 log.info("Key     : " + key);
                 log.info("Data     : " + data);
                 log.info("Topic     : " + recordMetadata.topic());

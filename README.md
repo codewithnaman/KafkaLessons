@@ -321,7 +321,7 @@ To produce data in kafka we need to follow these below steps:
 * Send data
 
 #### Simple Java Producer
-We have Created one simple consumer 
+We have Created one simple producer 
 [SimpleKafkaProducer](kafkaSimpleConsumerProducerExample/src/main/java/com/aasaanshiksha/producer/SimpleKafkaProducer.java)
 which contains exactly 3 methods corresponding to operation mentioned in above block.
 
@@ -346,7 +346,7 @@ that the key and value are of type String.
 The KafkaProducer.send is a asynchronous process, so if you run the program and does not close the producer then it might
 be possible you will not able to see the data in kafka as application exists before this method executes.
 
-#### Producer with callbabcks
+#### Producer with callbacks
 
 In some cases you need the record metadata after sending purpose, mostly for logging or debug purpose. Then Kafka send
 method provide a Callback interface with a method which provides you the metadata or exception if record failed due to
@@ -378,19 +378,191 @@ To show that with same keys values go to same partition we had implement class
 . Please run this class your own while practicing, this should give you output log like below:
 
 ```text
-
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Key     : key_0
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Data     : Sample data 0
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Topic     : demo_application_topic
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Partition : 2
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Offset    : 46
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - TimeStamp : 1571371823067
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Key     : key_0
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Data     : Sample data 3
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Topic     : demo_application_topic
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Partition : 2
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Offset    : 47
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - TimeStamp : 1571371823081
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Key     : key_0
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Data     : Sample data 6
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Topic     : demo_application_topic
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Partition : 2
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Offset    : 48
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - TimeStamp : 1571371823081
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Key     : key_0
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Data     : Sample data 9
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Topic     : demo_application_topic
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Partition : 2
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Offset    : 49
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - TimeStamp : 1571371823082
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Key     : key_2
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Data     : Sample data 2
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Topic     : demo_application_topic
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Partition : 0
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Offset    : 36
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - TimeStamp : 1571371823081
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Key     : key_2
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Data     : Sample data 5
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Topic     : demo_application_topic
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Partition : 0
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Offset    : 37
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - TimeStamp : 1571371823081
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Key     : key_2
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Data     : Sample data 8
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Topic     : demo_application_topic
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Partition : 0
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Offset    : 38
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - TimeStamp : 1571371823082
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Key     : key_1
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Data     : Sample data 1
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Topic     : demo_application_topic
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Partition : 1
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Offset    : 38
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - TimeStamp : 1571371823080
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Key     : key_1
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Data     : Sample data 4
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Topic     : demo_application_topic
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Partition : 1
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Offset    : 39
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - TimeStamp : 1571371823081
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Key     : key_1
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Data     : Sample data 7
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Topic     : demo_application_topic
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Partition : 1
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - Offset    : 40
+[kafka-producer-network-thread | producer-1] INFO com.aasaanshiksha.producer.KafkaProducerWithKeys - TimeStamp : 1571371823081
 ```
 
 
 ### Consumer
+To consume data from kafka we need to follow these below steps:
+* Create consumer properties
+* Create the consumer
+* Subscribe consumer to our topic
+* Poll for new data
 
 #### Simple Java Consumer
+We have Created one simple consumer
+[SimpleKafkaConsumer](kafkaSimpleConsumerProducerExample/src/main/java/com/aasaanshiksha/consumer/SimpleKafkaConsumer.java)
+ which contains exactly 4 methods corresponding to operation mentioned in above block.
+ 
+ In above solution we are just creating properties, initializing the kafka consumer, subscribe to topics and sending data. 
+ Let's understand consume data part.
+ 
+ ```java
+  private static void consumeDataFromKafka(KafkaConsumer<String, String> kafkaConsumer) {
+         int noDataReceived = 0;
+         while (noDataReceived < 5) {
+             ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofMillis(1000));
+             if (!records.isEmpty()) {
+                 for (ConsumerRecord<String, String> record : records) {
+                     log.info("Value          : "+record.value());
+                     log.info("Partition      : "+record.partition());
+                     log.info("Offset         : "+record.offset());
+                     log.info("Timestamp      : "+record.timestamp());
+                 }
+             } else {
+                 noDataReceived++;
+             }
+         }
+     }
+ ```
 
-#### Consumer with group 
+ Kafka Consumer polls the data from kafka topic using poll method in which we provide the timeout milliseconds. KafkaConsumer
+ returns ConsumerRecord if any message to read is remaining for the consumer group, Otherwise Empty ConsumerRecord will
+ be returned. The KafkaConsumer takes the Deserializer for key and value which converts the byte stream to meaningful content
+ like for the example it converts to string. This should be reverse process from serialization which we understand in producer
+ section. The additional property it takes is auto reset, which value is earliest, latest or none. These will be used if
+ any consumer got out of sync due to not running due to some reason and offset is not contained by the kafka, Then at
+ which point Consumer resume
+    - earliest - For the earliest data present in kafka
+    - latest - For the data which will come after starting the consumer
+ To provide unique records to consumer group we provide group id in configuration, so if there are many consumers
+ the consumers get the records unique to topic and partition is assigned to each consumer, In case any consumer comes
+ up or goes down the consumers rebalanced.
 
 #### Consumer replay using seek and assign 
+Seek and Assign are used to replay data or fetch specific message. We have 
+[KafkaConsumerWithSeekAndAssign](kafkaSimpleConsumerProducerExample/src/main/java/com/aasaanshiksha/consumer/KafkaConsumerWithSeekAndAssign.java)
+as sample Implementation for the seek and assign where we are skipping first 5 messages from partition 0 and read next 
+5 messages. We don't have any group id as we are replaying message.
 
 #### Client Comparability Note
+* As of Kafka 0.10.2, your clients & Kafka Brokers have capability called bi-directional compatibility i.e. Your Older
+client can talk to newer version of the broker or newer client can talk to older broker
+* Since Kafka has bi-directional compatibility it is best practice to use latest client library version if you can.
+ 
+## Section - 3 Advance Configuration for Producer and Consumers
 
+### Producer Configuration
+
+#### Acks and min.insync.replicas
+Let's first understand the acks different values and what are their result with some usecase on which they can use.
+
+##### Ack = 0
+* No response is requested
+* If the broker goes offline or an exception happens, producer won't know and will lose data
+* Useful for data where it's okay to potentially lose few messages like Metrics collection and Log Collection
+
+##### Ack = 1
+* Leader response is requested, but replication is not a guarantee (happens in the background)
+* If an ack is not received the producer may retry
+* If the leader broker goes offline but replicas haven't replicated the data yet, we have a data loss
+* It is less recommended approach for transactional system where each record is critical.
+
+##### Ack = all
+* Leader + Replicas ack requested, it make sure the high availability of data in case if leader broker goes down.
+* This causes added latency which will introduce a little delay in your transaction but ensures no data loss by
+making sure having enough replicas.
+* Acks=all must be used in conjunction with min.insync.replicas. min.insync.replicas implies that at least 2 brokers
+that are ISR (including leader) must respond that they have the data
+* For Ex. if you use replication.factor=3, min.insync.replicas=2 and acks=all, you can only tolerate 1 broker going down,
+otherwise the producer will receive an exception on send.
+
+#### retries and max.in.flight.requests.per.connection
+
+* In case of transient failures, developers are expected to handle exceptions, otherwise the data will lost. Ex. of transient
+failure are like BrokerDownException or NotEnoughReplicasException
+ * To recover from transient failures kafka client library provide retry mechanism to send message again depending on the
+retries parameter to provided.
+ * By default the retries parameter value is 0, You can provide this to higher number like Integer.MAX_VALUE, so it will
+ try to to send message again and again until the producer get feedback.
+ * In case of retries, by default there is a chance that message will sent out of order (if a batch has failed to be sent).
+ * If you rely on Key-based ordering, that can be an issue.
+ * For this, you can set the setting while controls how many produce request can be made in parallel, for setting us this
+ you can use max.in.flight.request.per.connection property.
+ * By default the value of max.in.flight.request.per.connection property value is 5, to ensure retries and order of messages
+ you can set value of this to 1, but it may impact throughput drastically.
+ * Due to transient failures there are chances that data is committed in kafka and producer never get acknowledgement, due
+ to which producer retries and try to send it again and a duplicate message will be pushed to topic 
+ * To overcome all issue Kafka >= 1.0.0 comes with a better solution.
+
+#### enable.idempotence
+
+* In kafka>=0.11 you can define a "idempotent producer" which won't introduce duplicates on the network error.
+* If any request reaches to kafka and it commits the data and it get a request for the same data then it will send the ack
+not write the data to kafka, kafka de-duplicate the data using the produce-request-id. If the kafka receives multiple requests
+with same producer-request-id, it will write for the one request and discard the subsequent request and send the ack for 
+each request 
+
+* Idempotent producers are great to guarantee a stable and safe pipeline.
+
+* Idempotent producers come with below configuration
+    - retries = Integer.MAX_VALUE
+    - max.in.flight.request = 1 for Kafka>0.11 & < 1.1
+    - max.in.flight.request = 5 for Kafka>=1.1 for higher performance and it guarantees your message will not go out of
+    order while the max.in.flight request has the value greater than 1
+    - acks = all
+ 
+ * To make your producer idempotent your need provide enable.idempotence=true in your properties.
  
 
+
+### Consumer Configuration

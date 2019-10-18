@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.time.Duration;
@@ -12,19 +13,18 @@ import java.util.Arrays;
 import java.util.Properties;
 
 @Slf4j
-public class SimpleKafkaConsumer {
+public class KafkaConsumerWithSeekAndAssign {
 
     public static void main(String[] args) {
         String topicName = "demo_application_topic";
-        String groupId = "SimpleKafkaConsumer";
-        KafkaConsumer<String, String> kafkaConsumer = createKafkaConsumer(getKafkaProperties(groupId));
-        subscribeTopics(kafkaConsumer, topicName);
+        KafkaConsumer<String, String> kafkaConsumer = createKafkaConsumer(getKafkaProperties());
+        assignAndSeek(kafkaConsumer, topicName);
         consumeDataFromKafka(kafkaConsumer);
     }
 
     private static void consumeDataFromKafka(KafkaConsumer<String, String> kafkaConsumer) {
-        int noDataReceived = 0;
-        while (noDataReceived < 5) {
+        int messagesReadSoFar = 0;
+        while (true) {
             ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofMillis(1000));
             if (!records.isEmpty()) {
                 for (ConsumerRecord<String, String> record : records) {
@@ -32,15 +32,19 @@ public class SimpleKafkaConsumer {
                     log.info("Partition      : "+record.partition());
                     log.info("Offset         : "+record.offset());
                     log.info("Timestamp      : "+record.timestamp());
+                    messagesReadSoFar++;
+                    if(messagesReadSoFar==5){
+                        break;
+                    }
                 }
-            } else {
-                noDataReceived++;
             }
         }
     }
 
-    public static void subscribeTopics(KafkaConsumer<String, String> kafkaConsumer, String... topics) {
-        kafkaConsumer.subscribe(Arrays.asList(topics));
+    public static void assignAndSeek(KafkaConsumer<String, String> kafkaConsumer, String topic) {
+        TopicPartition topicPartition = new TopicPartition(topic,0);
+        kafkaConsumer.assign(Arrays.asList(topicPartition));
+        kafkaConsumer.seek(topicPartition,10l);
     }
 
     public static KafkaConsumer<String, String> createKafkaConsumer(Properties properties) {
@@ -48,13 +52,12 @@ public class SimpleKafkaConsumer {
         return consumer;
     }
 
-    public static Properties getKafkaProperties(String groupId) {
+    public static Properties getKafkaProperties() {
         Properties properties = new Properties();
         properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.109.131:9092");
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         return properties;
     }
 }

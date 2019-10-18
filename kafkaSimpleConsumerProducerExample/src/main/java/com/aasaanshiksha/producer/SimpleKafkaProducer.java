@@ -10,9 +10,9 @@ import java.util.Properties;
 public class SimpleKafkaProducer {
 
     public static void main(String[] args) {
-        String topicName = "demo_topic";
+        String topicName = "demo_application_topic";
         Properties kafkaProperties = getKafkaProperties();
-        KafkaProducer<String, String> kafkaProducer = getKafkaProducer(kafkaProperties);
+        KafkaProducer<String, String> kafkaProducer = createKafkaProducer(kafkaProperties);
 
         for (int i = 0; i < 10; i++) {
             sendDataToKafka(kafkaProducer, "Sample Data " + i, topicName);
@@ -25,14 +25,14 @@ public class SimpleKafkaProducer {
         kafkaProducer.send(producerRecord); // This is asynchronous process
     }
 
-    public static KafkaProducer<String, String> getKafkaProducer(Properties kafkaProperties) {
+    public static KafkaProducer<String, String> createKafkaProducer(Properties kafkaProperties) {
         KafkaProducer<String, String> kafkaProducer = new KafkaProducer<String, String>(kafkaProperties);
         return kafkaProducer;
     }
 
     public static Properties getKafkaProperties() {
         Properties properties = new Properties();
-        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "");
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.109.131:9092");
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         return properties;
