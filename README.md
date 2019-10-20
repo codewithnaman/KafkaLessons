@@ -1,5 +1,12 @@
 # Kafka
 
+* [Section - 1 Theory](#section---1-theory)
+* [Section - 2 Kafka CLI](#section---2-kafka-cli)
+* [Section - 3 Kafka Java Programming](#section---3-kafka-java-programming)
+* [Section - 4 Advance Configuration for Producer and Consumers](#section---4-advance-configuration-for-producer-and-consumers)
+* [Section - 5 Best Practices, Partitions Count and Replication Factor](#section---5-best-practices-partitions-count-and-replication-factor)
+* [Section - 6 Advanced Topic Configurations](#section---6-advanced-topic-configurations)
+
 ## Section - 1 Theory
 
 ### Topics partitions and offsets
