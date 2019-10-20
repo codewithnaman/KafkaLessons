@@ -499,7 +499,7 @@ as sample Implementation for the seek and assign where we are skipping first 5 m
 client can talk to newer version of the broker or newer client can talk to older broker
 * Since Kafka has bi-directional compatibility it is best practice to use latest client library version if you can.
  
-## Section - 3 Advance Configuration for Producer and Consumers
+## Section - 4 Advance Configuration for Producer and Consumers
 
 ### Producer Configuration
 
@@ -563,6 +563,307 @@ each request
  
  * To make your producer idempotent your need provide enable.idempotence=true in your properties.
  
+#### Message Compression (compression.type)
+ * Producer usually send data that is text based for example with JSON.
+ * In this case it is important to apply compression to producer, because plain text JSON is very heavy.
+ * Compression is enabled at Producer level and doesn't require any configuration change in the brokers or in the consumers.
+ * compression.type can be none, gzip, lz4, snappy. The default value for this property is none.
+ * Compression is more effective the bigger the batch of message being sent to Kafka!
+ * Compressed batch has following advantages:
+    - Much smaller producer request size (compression ratio up to 4x)
+    - Faster to transfer data over the network => less latency
+    - Better throughput
+    - Better disk utilization in kafka broker (stored messages on disk are smaller)
+ * There are some disadvantage of the compression too but they are very minor, Let's see what are they:
+    - Producers must commit some CPU cycles to compression
+    - Consumers must commit some CPU cycles to decompression
+ * Find a compression algorithm that gives you the bes performance for your specific data. Test all of them!
+ * Always use compression in production and especially if you have high throughput
+ * Consider tweaking linger.ms and batch.size to have bigger batches, and therefore more compression and higher throughput.
 
+#### Producer batching (linger.ms & batch.size)
+* By default Kafka try to minimize the latency so tries to send records as soon as possible
+    - It will have up to 5 requests in flight meaning up to 5 messages individually sent at the same time
+    - After this, if more messages have to be sent while others are in flight, Kafka is smart and will start batching
+    them while they wait to send them all at once.
+* This smart batching allows Kafka to increase throughput while maintaing very low latency.
+* Batches have higher compression ratio so better efficency.
+* To control this batching behaviour we have two attributes:
+    - **linger.ms** : Number of milliseconds a producer is willing to wait before sending a batch out. Default value for 
+    this attribute is 0 i.e. Kafka send the message as it arrives.
+        - If we modify this value with some slight value like 5 milliseconds, we can increase chances of the message 
+        being sent together as batch.
+        - So at the expense of introducing a small delay, we can increase throughput, compression and efficiency of our
+        producer.
+        - If a batch is full (batch.size) before the end of linger.ms period, it will be sent to kafka right away!
+    -  **batch.size** : Maximum number of bytes that will be included in a batch. The default value for this is 16 KB.
+        -   Increasing a batch size to something like 32KB or 64KB can help increasing the compression, throughput and
+        efficiency of requests.
+        -   Any message that is bigger than the batch size will not be batched sent directly to Kafka
+        -   A batch is allocated per partition, so make sure that you don't se it to a number that's too high, otherwise
+        you will waste memory which can cause producer memory problems and bring down your broker performance.
+        -   Check your average message size and try to keep your batch size between 16KB to 128KB, get performance stats
+        for different batch size and choose which best fit your use case.
+         
+#### Producer default Partitioner and how keys are hashed
+* By default your keys are hashed using "murmur2' algorithm
+* It is most likely preferred to not override the behaviour of the partitioner, but it is possible to do so (partitioner.class)
+* The formula currently used is:
+    - targetpartition = Utils.abs(Utils.murmur2(record.key()))%numPartitions.
+* This means that some key will go to same partition and adding partitions to a topic will completely alter the formula.
 
+#### max.block.ms and buffer.memory
+* If the producer produces faster than the broker can take the records will be buffered in memory
+* buffer.memory = 33554432 (32MB) is default size of the buffer
+* That buffer will fill up over time and fill back down when the throughput to the broker increases.
+
+* If that buffer is full (All 32MB) then the .send() method will start to block (won't return right away)
+* max.block.ms=60000 the time to .send() will block until throwing exception. Exceptions are basically thrown
+when 
+    -   The producer has filled up it's buffer
+    -   The broker is not accepting any new data
+    -   60 seconds has elapsed
+* If you hit an exception hit that usually means brokers are down or overloaded a they can't respond to requests
+ 
 ### Consumer Configuration
+
+#### Delivery Semantics
+
+##### At Most Once
+In this offsets are committed as soon as the message batch is received. If processing goes wrong, the message will be 
+lost (it won't read again).
+
+##### At Least Once
+I this offsets are committed after the message is processed. If the processing goes wrong, the message will be read again.
+This can result in duplicate processing of messages, so make sure your processing is idempotent (i.e. processing again
+ the messages won't impact your system)
+ 
+##### Exactly Once
+It can be achieved in kafka to kafka workflow using Kafka Streams API. For Kafka => Sink workflow use an idempotent consumer.
+
+
+By default Kafka consumer runs on "At Least Once".
+
+
+#### Control Consumer poll behaviour
+
+##### fetch.min.bytes (Default value 1 K)
+ * Controls how much data you want to pull at least on each request
+ * Helps improving throughput and decreasing request number
+ * Sometimes hits on latency if bigger value of this is set.
+ 
+##### max.poll.records (Default value 500)
+ * Controls how many records to receive per poll request
+ * Increase if your messages are small and have a lot of available RAM
+ * Good to monitor how nay records are polled per request.
+
+##### max.partitions.fetch.bytes (Default value 1 MB)
+ *  Maximum data returned by the broker per partition
+ *  If you read from 100 partitions, you'll need a lot memory. So, be careful when handling 
+  this parameter your own
+
+##### fetch.max.bytes (Default value 50 MB)
+ * Maximum data returned for each fetch request(covers multiple partitions)
+ * The consumer performs multiple fetches in parallel  
+ 
+**Note: Chang these setting only if your consumer maxes out on throughput already**
+
+#### Consumer Offset Commits Strategies
+
+There are two most common patterns for committing offsets in a consumer application 
+ * enable.auto.commit = true & synchronous processing of batches
+    -    With auto-commit, offsets will be committed automatically for you at regular interval 
+    (auto.commit.interval.ms=500 by default) every-time you call .poll
+    -   If you don't use synchronous processing, you will be in "at-most-once" behaviour because offsets will be committed
+    before your data is processed.
+ * enable.auto.commit = false & manual commit of offsets
+    -   You control when you commit offsets and what's the condition for commiting them.
+    -   You can commit offset manually using commitSync method.
+
+#### Controlling Consumer Liveliness
+
+When Consumer runs in consumer group, we will see how they work and some of attributes that can used to find
+consumer liveliness.
+* In each consumer group consumer going to Poll to broker.
+* Also Each consumer talks to Consumer Coordinator another broker for heartbeat thread.
+* To detect consumers that are "down", there is a "heartbeat" mechanism and a "poll" mechanism.
+* To avoid issues, consumers are encouraged to process data fast and poll often
+
+##### session.timeout.ms (default 10 seconds)
+* The heartbeat thread register themselves to broker than set this parameter to broker which mean if broker does not get
+heartbeat for 10 second it consider this consumer to dead.
+* Heartbeats are sent periodically to broker, if no heartbeat is sent during the period, the consumer is considered dead
+* Set even lower to faster consumer rebalances.
+
+##### heartbeat.interval.ms (Default 3 seconds)
+* How often to send heartbeats to broker
+* Usually set to 1/3rd of session.timeout.ms
+
+##### max.poll.interval.ms (default 5 minutes)
+* Maximum amount of time between two .poll() calls before declaring the consumer dead.
+* If data processing is taking much more time between two poll calls then set this number higher.
+
+## Section - 5 Best Practices, Partitions Count and Replication Factor
+
+### Partitions Count and Replication Factor
+The two most important parameters when creating a topic. They impact performance and durability of the system overall.
+
+* It is best to get the parameters right at the first time!
+    - If the partitions count increase during a topic lifecycle, you will break your keys ordering guarantees.
+    - If the replication factor increases during a topic lifecycle, you put more pressure on your cluster, which can lead 
+to unexpected performance decrease and cluster imbalance.
+    - Each partition can handle a throughput of few MB/s (measure it for your setup!)
+    - More partitions implies:
+        - Better parallelism, better throughput
+        - Ability to run more consumers in a group to scale
+        - Ability to leverage more brokers if you have a large cluster
+        - But more elections to perform for Zookeeper
+        - But more files opened on Kafka
+    - Guidelines for Partition Count (No hard solution, you need to test on your infrastructure for desired throughput, but a start point to measure)
+        - If have small cluster (<6 Brokers): 2 * number of brokers partition
+        - If have Big cluster (>12 Brokers): 1 * number of brokers partition
+        - Adjust for number of consumers you need to run in parallel at peak throughput
+        - Adjust for producer throughput (increase if super-high throughput or projected increase in next two years)
+        - Test with different partition count for your use case, because use case and infrastructure performance varies cluster to cluster)
+        - Don't create a topic with high number of partitions until you have really a use case for that.
+    - Replication Factor
+        - Should be at least 1, usually 3, maximum 4
+        - The higher the replication factor (N)
+            - Better resilience of your system (N-1 brokers can fail)
+            - But more replication higher latency will be for producer if acks set to all
+            - But more disk space on your system (50% more if RF is 3 instead of 2)
+        - Set it to 3 to get started
+        - If replication performance is an issue, get a better broker instead of less Replication Factor
+
+
+### Cluster Guidelines
+
+* It is pretty much accepted that a broker should not hold more than 2000 to 4000 partitions (across all topics of that broker).
+* Additionally, a Kafka Cluster should have a maximum of 20000 partitions across all brokers.
+* The reason is that in case of brokers going down, zookeeper need to perform a lot of leader elections.
+
+
+* If you need more partitions in your cluster, add brokers instead or
+* If you need more than 20000 partitions in your cluster (it will take time to get there!), follow the Netflix model and 
+create more Kafka clusters.
+
+* Overall, you don't need a topic with 1000 partitions to achieve high throughput. Start at reasonable number and test performance.
+
+## Section - 6 Advanced Topic Configurations
+
+We have some config cli option, which will help to add, modify or delete topic related config using cli. To use cli 
+below can be used. 
+```shell script
+./kafka-configs.sh --zookeeper <zookeeper_servers> --entity-type topics --entity-name <topic_name> --alter --add-config <property>=<value>
+```
+
+### Partitions and Segments
+* Topics are made of partitions (we already know that)
+* Partitions are made of segments (files)
+* There are multiple segments of a partition, but at a time only one active segment (the one data is being written to)
+* There are two settings for segment are present:
+    - log.segment.bytes : The max size of a single segment in bytes (Default value is 1 GB)
+    - log.segment.ms : The time kafka will wait before committing segment if not full (Default value is 1 Week)
+
+* Segments comes with two indexes (files):
+    - An offset to position index: allows Kafka where to read to find a message
+    - A timestamp to offset index: allows Kafka to find messages with a timestamp
+* Therefore, Kafka know where to find data in a constant time.
+
+```shell script
+ngupta@node1:~/kafka/data/kafka-data/example-0$ pwd
+/home/ngupta/kafka/data/kafka-data/example-0
+ngupta@node1:~/kafka/data/kafka-data/example-0$ ls -lrt
+total 20
+-rw-rw-r-- 1 ngupta ngupta  10 Oct 12 13:08 00000000000000000002.snapshot
+-rw-rw-r-- 1 ngupta ngupta 333 Oct 14 03:53 00000000000000000000.log
+-rw-rw-r-- 1 ngupta ngupta  10 Oct 14 04:55 00000000000000000004.snapshot
+-rw-rw-r-- 1 ngupta ngupta   8 Oct 18 03:55 leader-epoch-checkpoint
+-rw-rw-r-- 1 ngupta ngupta  24 Oct 18 07:18 00000000000000000000.timeindex
+-rw-rw-r-- 1 ngupta ngupta   0 Oct 18 07:18 00000000000000000000.index
+ngupta@node1:~/kafka/data/kafka-data/example-0$
+```
+
+* A smaller log.segment.bytes means:
+    - More segments per partitions
+    - Log Compaction happens more often
+    - But Kafka has to keep more files opened i.e. Too many open files
+    - Best practice to set the data you expect in a day or two
+
+* A smaller log.segment.ms means:
+    - You set a max frequency for log compaction
+    - Maybe you want daily compaction instead of weekly
+
+### Log Cleanup policies
+
+* Many Kafka cluster make data expire, according to a policy this concept called log cleanup.
+* There are two log cleanup policies:
+    - Policy I : log.cleanup.policy=delete (Kafka default for all user topics)
+        - It can be based on the age of data (default is a week)
+        - It can be based on max size of log (default is -1 which means infinite)
+    - Policy II : log.cleanup.policy=compact (Kafka default for topic __consumer_offsets)
+        - Delete based on keys of your messages
+        - Will delete old duplicate keys after the active segment is committed
+        - Infinite time and space retention 
+
+#### Log Cleanup: Why and When?
+* Delete data from Kafka allows you to:
+    - Control the size of the data on the disk, delete obsolete data
+    - Overall: Limit maintenance work on the Kafka Cluster
+
+* How often does log cleanup happen?
+    - Log cleanup happens on your segments!
+    - Smaller / More segments means that log cleanup will happen more often
+    - Log cleanup shouldn't happen too often because it takes CPU and RAM resources
+    - The cleaner checks for work every 15 seconds (log.cleaner.backoff.ms)
+    
+#### Log Cleanup Policy : Delete
+* log.retention.hours
+    - number of hours to keep data for (default is 168 - one week)
+    - Higher number means more disk space
+    - Lower number means that less data is retained (if your consumers are down for too long, they can miss data)
+
+* log.retention.bytes
+    - Max size in Bytes for each partition (default is -1 means infinite)
+    - Useful to keep the size of a log under a threshold
+
+#### Log Cleanup Policy : Compact
+* Log compaction ensures that your log contains at least the last known value for a specific key within a partition
+* Very useful if we just require a SNAPSHOT instead of full history(such as for data table in database)
+* The idea is that we only keep the latest "update" for a key in our log
+
+##### Log compaction Guarantees
+* Any consumer that is reading from the tail of a log (most current data) will still see all the messages sent to topic.
+* Ordering of the message it kept, log compaction only removes some messages, but does not re-order them
+* The offset of a message is immutable (it never changes). Offsets are just skipped if a message is missing.
+* Delete records can still be seen by consumers for a period of delete.retention.ms (default is 24 hours).
+
+
+* Log Compaction doesn't prevent you from pushing duplicate data to Kafka
+    - De-duplication is done after a segment is committed
+    - Your Consumers will still read from tail as soon as the data arrives
+* Log Compaction doesn't prevent you from reading duplicate data from Kafka
+* Log Compaction can fail from time to time
+    - It is an optimization and the compaction thread might crash
+    - Make sure you assign enough memory to it and that it gets triggered
+    - Restart Kafka if log compaction is broken(this is bug and may get fixed in future)
+* You can't trigger Log Compaction using an API call
+
+##### Log compaction configurations
+
+* segment.ms - Max amount of time to wait to close active segment (Default value 7 days)
+* segment.byte - Max size of a segment (Default value 1GB)
+* min.compaction.lag.ms - How long to wait before a message can be compacted. (Default value 0)
+* delete.retention.ms - Wait before deleting data marked for compaction (Default value 24 hours)
+* min.cleanable.dirty.ratio - Higher value of this more efficient cleaning, but uses CPU and RAM resources, too lower value 
+means cleaning impacted and update happens rarely (Default value 0.5)
+
+
+### unclean.leader.election
+* If all your In sync replicas die (but you still have out of sync replicas up), you have following option:
+    - Wait for an ISR to come back online (Default)
+    - Enable unclean.leader.election=true
+* If you enable unclean.leader.election=true, you improve availability, but you will lose data because other messages on
+ISR will be discarded
+* Overall this is a very dangerous setting and implications must be understood fully before enabling it.
+* This setting will be use in cases where data loss is somewhat acceptable at the trade-off of availability.
